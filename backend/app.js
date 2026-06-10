@@ -10,7 +10,12 @@ app.use(express.json());
 
 app.get("/api", (req, res) => {
     const data = {
-        message: "Hello from the server!"
+        message: [
+            "Hello from the server!",
+            "This is a sample response from the backend.",
+            "You can replace this with your actual API endpoints and data.",
+            "Feel free to customize this response as needed."
+        ]
     };
     res.send(data);
 });
