@@ -18,7 +18,9 @@ function App() {
 
   return (
     <>
-    {data.message ? <h1>{data.message}</h1> : <p>Loading...</p>}
+    {data.message && data.message.map((message, index) => (
+      <h1 key={index}>{message}</h1>
+    ))}
     </>
   );
 }
