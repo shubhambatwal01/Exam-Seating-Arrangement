@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 require("dotenv").config();
+const connectDB = require("./config/dbConnection");
 
 const app = express();
 
@@ -20,7 +21,7 @@ app.get("/api", (req, res) => {
     res.send(data);
 });
 
-mongoose.connect(process.env.DB_PATH).then(() => {
+connectDB().then(() => {
   app.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`);
   });
