@@ -1,10 +1,10 @@
 const express = require("express");
-const router = express.Router();
+const subjectRoutes = express.Router();
 const subjectController = require("../controllers/subjectController");
 
-router.get("/", subjectController.getAllSubjects);
-router.post("/", subjectController.createSubject);
-router.put("/:id", subjectController.updateSubject);
-router.delete("/:id", subjectController.deleteSubject);
+subjectRoutes.get("/", subjectController.getSubjects);
+subjectRoutes.post("/", subjectController.createSubject);
+subjectRoutes.put("/:id", subjectController.updateSubject);
+subjectRoutes.delete("/:id", subjectController.deleteSubject);
 
-module.exports = router;
+module.exports = subjectRoutes;

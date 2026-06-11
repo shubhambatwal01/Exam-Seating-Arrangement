@@ -12,10 +12,9 @@ const subjectSchema = new mongoose.Schema({
   difficultyLevel: {
     type: String,
     enum: ["easy", "medium", "hard"],
-    default: "easy",
   },
 });
 
 subjectSchema.index({ subjectCode: 1 }, { unique: true });
 
-module.exports = mongoose.model("Subject", subjectSchema);
+module.exports = mongoose.model("subject", subjectSchema);
