@@ -1,8 +1,8 @@
-const subject = require("../models/subject");
+const Subject = require("../models/subject");
 
 exports.getSubjects = async (req, res) => {
   try {
-    const subjects = await subject.find();
+    const subjects = await Subject.find();
     res.json(subjects);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -10,19 +10,19 @@ exports.getSubjects = async (req, res) => {
 };
 
 exports.createSubject = async (req, res) => {
-  const subjects = await subject.create(req.body);
-  res.status(201).json(subjects);
+  const subject = await Subject.create(req.body);
+  res.status(201).json(subject);
 };
 
 exports.updateSubject = async (req, res) => {
   try {
-    const subjects = await subject.findByIdAndUpdate(req.params.id, req.body, {
+    const subject = await Subject.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
     });
-    if (!subjects) {
+    if (!subject) {
       return res.status(404).json({ message: "Subject not found" });
     }
-    res.json(subjects);
+    res.json(subject);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -30,8 +30,8 @@ exports.updateSubject = async (req, res) => {
 
 exports.deleteSubject = async (req, res) => {
   try {
-    const subjects = await subject.findByIdAndDelete(req.params.id);
-    if (!subjects) {
+    const subject = await Subject.findByIdAndDelete(req.params.id);
+    if (!subject) {
       return res.status(404).json({ message: "Subject not found" });
     }
     res.json({ message: "Subject deleted" });

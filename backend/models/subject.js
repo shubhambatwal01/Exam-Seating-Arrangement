@@ -17,4 +17,4 @@ const subjectSchema = new mongoose.Schema({
 
 subjectSchema.index({ subjectCode: 1 }, { unique: true });
 
-module.exports = mongoose.model("subject", subjectSchema);
+module.exports = mongoose.model("Subject", subjectSchema);
