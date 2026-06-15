@@ -4,13 +4,15 @@ const cors = require("cors");
 require("dotenv").config();
 const connectDB = require("./config/dbConnection");
 const subjectRoutes = require("./routes/subjectRoute");
+const studentRoutes = require("./routes/studentRoute");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-app.use("/api/subjects",subjectRoutes);
+app.use("/api/subjects", subjectRoutes);
+app.use("/api/students", studentRoutes);
 
 connectDB().then(() => {
   app.listen(process.env.PORT, () => {
