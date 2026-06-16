@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import "./App.css";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/dashboard";
 
 function App() {
   return (
-    <>
-      <Dashboard />
-    </>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Dashboard/>} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
