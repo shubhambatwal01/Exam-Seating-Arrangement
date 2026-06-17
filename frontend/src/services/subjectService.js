@@ -1,8 +1,8 @@
 import axios from "axios";
 
-const API = "http://localhost:3000/api/subjects";
+const API = "http://localhost:5173/api/subjects";
 
-export const getSubject = () => axios.get(API);
+export const getSubjects = () => axios.get(API);
 
 export const createSubject = (data) => axios.post(API, data);
 
