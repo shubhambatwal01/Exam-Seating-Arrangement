@@ -5,6 +5,7 @@ require("dotenv").config();
 const connectDB = require("./config/dbConnection");
 const subjectRoutes = require("./routes/subjectRoute");
 const studentRoutes = require("./routes/studentRoute");
+const facultyRoutes = require("./routes/facultyRoute");
 
 const app = express();
 
@@ -13,6 +14,7 @@ app.use(express.json());
 
 app.use("/api/subjects", subjectRoutes);
 app.use("/api/students", studentRoutes);
+app.use("/api/faculty", facultyRoutes);
 
 connectDB().then(() => {
   app.listen(process.env.PORT, () => {
