@@ -1,4 +1,4 @@
-const Faculty = require("../models/faculty");
+import Faculty from "../models/faculty.js";
 
 export const getFaculties = async (req, res) => {
   try {
