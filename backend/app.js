@@ -6,6 +6,7 @@ const connectDB = require("./config/dbConnection");
 const subjectRoutes = require("./routes/subjectRoute");
 const studentRoutes = require("./routes/studentRoute");
 const facultyRoutes = require("./routes/facultyRoute");
+const timetableRoutes = require("./routes/timetableRoutes");
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use(express.json());
 app.use("/api/subjects", subjectRoutes);
 app.use("/api/students", studentRoutes);
 app.use("/api/faculty", facultyRoutes);
+app.use("/api/timetable", timetableRoutes);
 
 connectDB().then(() => {
   app.listen(process.env.PORT, () => {
