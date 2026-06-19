@@ -16,7 +16,7 @@ function Sidebar() {
           <Link to="/students">Students</Link>
         </li>
         <li>
-          <Link to="/faculties">Faculties</Link>
+          <Link to="/faculty">Faculties</Link>
         </li>
         <li>
           <Link to="/exam-settings">Exam Settings</Link>
