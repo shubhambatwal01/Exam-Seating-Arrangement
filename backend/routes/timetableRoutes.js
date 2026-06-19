@@ -1,9 +1,9 @@
 const express = require("express");
 
-const router = express.Router();
+const timetableRouter = express.Router();
 
-const { generate } = require("../controllers/timetableController");
+const timetableController = require("../controllers/timetableController");
 
-router.post("/generate", generate);
+timetableRouter.post("/generate", timetableController.generate);
 
-module.exports = router;
+module.exports = timetableRouter;
