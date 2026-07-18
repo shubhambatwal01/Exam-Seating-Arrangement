@@ -1,20 +1,34 @@
 const mongoose = require("mongoose");
 
 const subjectSchema = new mongoose.Schema({
-  subjectCode: String,
-  subjectName: String,
+  subjectCode: {
+    type: String,
+    required: true,
+    trim: true,
+    unique: true,
+  },
+  subjectName: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  semester: {
+    type: Number,
+    required: true,
+  },
   semesterId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Semester",
-    required: true,
   },
-  duration: Number,
-  difficultyLevel: {
+  duration: {
+    type: Number,
+    default: 0,
+  },
+  difficulty: {
     type: String,
-    enum: ["easy", "medium", "hard"],
+    enum: ["Easy", "Medium", "Hard"],
+    default: "Medium",
   },
 });
-
-subjectSchema.index({ subjectCode: 1 }, { unique: true });
 
 module.exports = mongoose.model("Subject", subjectSchema);
