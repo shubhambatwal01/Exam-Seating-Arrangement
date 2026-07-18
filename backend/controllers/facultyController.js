@@ -1,30 +1,38 @@
-import Faculty from "../models/faculty.js";
+const Faculty = require("../models/faculty");
 
-export const getFaculties = async (req, res) => {
+exports.getFaculties = async (req, res, next) => {
   try {
     const faculties = await Faculty.find();
     res.status(200).json(faculties);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    next(error);
   }
 };
 
-export const createFaculty = async (req, res) => {
+exports.createFaculty = async (req, res, next) => {
   try {
-    const faculty = await Faculty.create(req.body);
+    const { facultyName, subjectId } = req.body;
+    if (!facultyName || !subjectId) {
+      res.status(400);
+      throw new Error("facultyName and subjectId are required");
+    }
+
+    const faculty = await Faculty.create({ facultyName, subjectId });
     res.status(201).json(faculty);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    next(error);
   }
 };
 
-export const deleteFaculty = async (req, res) => {
+exports.deleteFaculty = async (req, res, next) => {
   try {
-    await Faculty.findByIdAndDelete(req.params.id);
-    res.status(200).json({
-      message: "Faculty deleted successfully",
-    });
+    const faculty = await Faculty.findByIdAndDelete(req.params.id);
+    if (!faculty) {
+      res.status(404);
+      throw new Error("Faculty not found");
+    }
+    res.status(200).json({ message: "Faculty deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    next(error);
   }
 };
