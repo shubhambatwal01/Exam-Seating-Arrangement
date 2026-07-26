@@ -28,7 +28,7 @@ function GenerateTimetable() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-[32px] border border-white/10 bg-slate-950/80 p-8 shadow-2xl shadow-slate-950/30 backdrop-blur-xl">
+      <div className="rounded-32px border border-white/10 bg-slate-950/80 p-8 shadow-2xl shadow-slate-950/30 backdrop-blur-xl">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-cyan-300/80">
@@ -77,7 +77,7 @@ function GenerateTimetable() {
             onChange={(e) => setForm({ ...form, endDate: e.target.value })}
           />
 
-          <button className="col-span-full rounded-3xl bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-3 text-base font-semibold text-slate-950 transition hover:from-cyan-400 hover:to-blue-400">
+          <button className="col-span-full rounded-3xl bg-linear-to-r from-cyan-500 to-blue-500 px-6 py-3 text-base font-semibold text-slate-950 transition hover:from-cyan-400 hover:to-blue-400">
             Generate Timetable
           </button>
         </form>

@@ -15,7 +15,7 @@ function Timetable() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-[32px] border border-white/10 bg-slate-950/80 p-8 shadow-2xl shadow-slate-950/30 backdrop-blur-xl">
+      <div className="rounded-32px border border-white/10 bg-slate-950/80 p-8 shadow-2xl shadow-slate-950/30 backdrop-blur-xl">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-cyan-300/80">
@@ -26,7 +26,7 @@ function Timetable() {
             </h1>
           </div>
           <button
-            className="rounded-3xl bg-gradient-to-r from-cyan-500 to-blue-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:from-cyan-400 hover:to-blue-400"
+            className="rounded-3xl bg-linear-to-r from-cyan-500 to-blue-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:from-cyan-400 hover:to-blue-400"
             onClick={load}
           >
             Refresh
@@ -34,7 +34,7 @@ function Timetable() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-[32px] border border-white/10 bg-slate-950/80 shadow-2xl shadow-slate-950/30">
+      <div className="overflow-hidden rounded-32px border border-white/10 bg-slate-950/80 shadow-2xl shadow-slate-950/30">
         <table className="min-w-full divide-y divide-slate-800 text-left">
           <thead className="bg-slate-900/90 text-slate-400">
             <tr>
