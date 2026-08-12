@@ -1,4 +1,6 @@
 import { useState } from "react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 function ExamSettings() {
   const [settings, setSettings] = useState({
@@ -44,22 +46,62 @@ function ExamSettings() {
             }
           />
 
-          <input
-            value={settings.startDate}
-            type="date"
-            className="rounded-3xl border border-slate-700 bg-slate-900/90 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-500"
-            onChange={(e) =>
-              setSettings({ ...settings, startDate: e.target.value })
+          <DatePicker
+            selected={
+              settings.startDate
+                ? new Date(settings.startDate + "T00:00:00")
+                : null
             }
+            minDate={new Date()}
+            onChange={(date) => {
+              if (!date) {
+                setSettings({ ...settings, startDate: "" });
+                return;
+              }
+
+              const year = date.getFullYear();
+              const month = String(date.getMonth() + 1).padStart(2, "0");
+              const day = String(date.getDate()).padStart(2, "0");
+
+              setSettings({
+                ...settings,
+                startDate: `${year}-${month}-${day}`,
+              });
+            }}
+            dateFormat="dd/MM/yyyy"
+            placeholderText="Select start date"
+            className="w-full rounded-3xl border border-slate-700 bg-slate-900/90 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-500"
+            required
           />
 
-          <input
-            value={settings.endDate}
-            type="date"
-            className="rounded-3xl border border-slate-700 bg-slate-900/90 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-500"
-            onChange={(e) =>
-              setSettings({ ...settings, endDate: e.target.value })
+          <DatePicker
+            selected={
+              settings.endDate ? new Date(settings.endDate + "T00:00:00") : null
             }
+            minDate={
+              settings.startDate
+                ? new Date(settings.startDate + "T00:00:00")
+                : new Date()
+            }
+            onChange={(date) => {
+              if (!date) {
+                setSettings({ ...settings, endDate: "" });
+                return;
+              }
+
+              const year = date.getFullYear();
+              const month = String(date.getMonth() + 1).padStart(2, "0");
+              const day = String(date.getDate()).padStart(2, "0");
+
+              setSettings({
+                ...settings,
+                endDate: `${year}-${month}-${day}`,
+              });
+            }}
+            dateFormat="dd/MM/yyyy"
+            placeholderText="Select end date"
+            className="w-full rounded-3xl border border-slate-700 bg-slate-900/90 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-500"
+            required
           />
 
           <select
