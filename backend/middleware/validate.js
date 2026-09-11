@@ -1,0 +1,15 @@
+import { validationResult } from "express-validator";
+
+export function validate(req, res, next) {
+  const result = validationResult(req);
+  if (result.isEmpty()) return next();
+
+  return res.status(422).json({
+    success: false,
+    data: null,
+    message: "Validation failed.",
+    error: result
+      .array()
+      .map(({ path, msg }) => ({ field: path, message: msg })),
+  });
+}
