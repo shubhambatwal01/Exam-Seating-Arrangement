@@ -1,8 +1,80 @@
-import {Router} from "express";
-import {Department,Course,Semester,Subject,Classroom,Faculty} from "../models/index.js";
-import {requireAuth,permit} from "../middleware/auth.js";
-import {ApiError,asyncHandler,ok} from "../utils/http.js";
-const r=Router();r.use(requireAuth);
-function mount(path,Model,{populate="",search=[]}={}){r.get(path,asyncHandler(async(req,res)=>{const filter={};if(req.query.q&&search.length)filter.$or=search.map(k=>({[k]:{$regex:req.query.q,$options:"i"}}));let q=Model.find(filter).sort({createdAt:-1});if(populate)q=q.populate(populate);const items=await q.lean();ok(res,{items,total:items.length});}));r.get(`${path}/:id`,asyncHandler(async(req,res)=>{let q=Model.findById(req.params.id);if(populate)q=q.populate(populate);const item=await q.lean();if(!item)throw new ApiError(404,`${Model.modelName} not found.`);ok(res,item);}));r.post(path,permit("admin"),asyncHandler(async(req,res)=>ok(res,await Model.create(req.body),`${Model.modelName} created.`,201)));r.patch(`${path}/:id`,permit("admin"),asyncHandler(async(req,res)=>{const item=await Model.findByIdAndUpdate(req.params.id,req.body,{new:true,runValidators:true});if(!item)throw new ApiError(404,`${Model.modelName} not found.`);ok(res,item,`${Model.modelName} updated.`);}));r.delete(`${path}/:id`,permit("admin"),asyncHandler(async(req,res)=>{const item=await Model.findByIdAndDelete(req.params.id);if(!item)throw new ApiError(404,`${Model.modelName} not found.`);ok(res,{id:item._id},`${Model.modelName} deleted.`);}));}
-mount("/departments",Department,{search:["name","code"]});mount("/courses",Course,{populate:"department",search:["name","code"]});mount("/semesters",Semester,{populate:"course"});mount("/subjects",Subject,{populate:"department semester course",search:["name","code"]});mount("/classrooms",Classroom,{search:["roomNo","building"]});mount("/faculty",Faculty,{populate:"department",search:["name","email","designation"]});
+import { Router } from "express";
+import {
+  Department,
+  Course,
+  Semester,
+  Subject,
+  Classroom,
+  Faculty,
+} from "../models/index.js";
+import { requireAuth, permit } from "../middleware/auth.js";
+import { ApiError, asyncHandler, ok } from "../utils/http.js";
+const r = Router();
+r.use(requireAuth);
+function mount(path, Model, { populate = "", search = [] } = {}) {
+  r.get(
+    path,
+    asyncHandler(async (req, res) => {
+      const filter = {};
+      if (req.query.q && search.length)
+        filter.$or = search.map((k) => ({
+          [k]: { $regex: req.query.q, $options: "i" },
+        }));
+      let q = Model.find(filter).sort({ createdAt: -1 });
+      if (populate) q = q.populate(populate);
+      const items = await q.lean();
+      ok(res, { items, total: items.length });
+    }),
+  );
+  r.get(
+    `${path}/:id`,
+    asyncHandler(async (req, res) => {
+      let q = Model.findById(req.params.id);
+      if (populate) q = q.populate(populate);
+      const item = await q.lean();
+      if (!item) throw new ApiError(404, `${Model.modelName} not found.`);
+      ok(res, item);
+    }),
+  );
+  r.post(
+    path,
+    permit("admin"),
+    asyncHandler(async (req, res) =>
+      ok(res, await Model.create(req.body), `${Model.modelName} created.`, 201),
+    ),
+  );
+  r.patch(
+    `${path}/:id`,
+    permit("admin"),
+    asyncHandler(async (req, res) => {
+      const item = await Model.findByIdAndUpdate(req.params.id, req.body, {
+        new: true,
+        runValidators: true,
+      });
+      if (!item) throw new ApiError(404, `${Model.modelName} not found.`);
+      ok(res, item, `${Model.modelName} updated.`);
+    }),
+  );
+  r.delete(
+    `${path}/:id`,
+    permit("admin"),
+    asyncHandler(async (req, res) => {
+      const item = await Model.findByIdAndDelete(req.params.id);
+      if (!item) throw new ApiError(404, `${Model.modelName} not found.`);
+      ok(res, { id: item._id }, `${Model.modelName} deleted.`);
+    }),
+  );
+}
+mount("/departments", Department, { search: ["name", "code"] });
+mount("/courses", Course, { populate: "department", search: ["name", "code"] });
+mount("/semesters", Semester, { populate: "course" });
+mount("/subjects", Subject, {
+  populate: "department semester course",
+  search: ["name", "code"],
+});
+mount("/classrooms", Classroom, { search: ["roomNo", "building"] });
+mount("/faculty", Faculty, {
+  populate: "department",
+  search: ["name", "email", "designation"],
+});
 export default r;

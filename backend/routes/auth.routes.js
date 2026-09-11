@@ -23,7 +23,10 @@ router.post(
   optionalAuth,
   [
     body("name").trim().notEmpty().withMessage("Name is required."),
-    body("email").isEmail().withMessage("A valid email is required.").normalizeEmail(),
+    body("email")
+      .isEmail()
+      .withMessage("A valid email is required.")
+      .normalizeEmail(),
     body("password")
       .isLength({ min: 8, max: 128 })
       .withMessage("Password must be 8-128 characters."),
@@ -36,7 +39,10 @@ router.post(
   asyncHandler(async (req, res) => {
     const userCount = await User.countDocuments();
     if (userCount > 0 && req.user?.role !== "admin") {
-      throw new ApiError(403, "After initial setup, only an admin can create accounts.");
+      throw new ApiError(
+        403,
+        "After initial setup, only an admin can create accounts.",
+      );
     }
 
     const { name, email, password, role = "staff" } = req.body;
@@ -55,7 +61,12 @@ router.post(
       res,
       {
         token: signToken(user),
-        user: { id: user._id, name: user.name, email: user.email, role: user.role },
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
       },
       userCount === 0 ? "Initial admin created." : "User created.",
       201,
@@ -66,31 +77,38 @@ router.post(
 router.post(
   "/login",
   [
-    body("email").isEmail().withMessage("A valid email is required.").normalizeEmail(),
+    body("email")
+      .isEmail()
+      .withMessage("A valid email is required.")
+      .normalizeEmail(),
     body("password").isString().notEmpty().withMessage("Password is required."),
   ],
   validate,
   asyncHandler(async (req, res) => {
     const { email, password } = req.body;
     const user = await User.findOne({ email }).select("+passwordHash");
-    const valid = user?.active && (await bcrypt.compare(password, user.passwordHash));
+    const valid =
+      user?.active && (await bcrypt.compare(password, user.passwordHash));
     if (!valid) throw new ApiError(401, "Invalid email or password.");
 
     ok(
       res,
       {
         token: signToken(user),
-        user: { id: user._id, name: user.name, email: user.email, role: user.role },
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
       },
       "Login successful.",
     );
   }),
 );
 
-router.get(
-  "/me",
-  requireAuth,
-  (req, res) => ok(res, {
+router.get("/me", requireAuth, (req, res) =>
+  ok(res, {
     id: req.user._id,
     name: req.user.name,
     email: req.user.email,

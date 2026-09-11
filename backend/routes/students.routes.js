@@ -1,2 +1,141 @@
-import {Router} from "express";import {Student,BacklogRegistration} from "../models/index.js";import {requireAuth,permit} from "../middleware/auth.js";import {excelUpload} from "../middleware/upload.js";import {parseWorkbook,commitWorkbook,templateBuffer} from "../services/studentImport.js";import {ApiError,asyncHandler,ok} from "../utils/http.js";
-const r=Router();r.use(requireAuth);r.get("/",asyncHandler(async(req,res)=>{const filter={active:true};if(req.query.type)filter.type=req.query.type;if(req.query.q)filter.$or=[{rollNo:{$regex:req.query.q,$options:"i"}},{name:{$regex:req.query.q,$options:"i"}}];const items=await Student.find(filter).populate("department course semester subjects").sort({rollNo:1}).lean();ok(res,{items,total:items.length});}));r.get("/import/template",asyncHandler(async(_req,res)=>{const b=await templateBuffer();res.setHeader("Content-Type","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");res.setHeader("Content-Disposition",'attachment; filename="student-import-template.xlsx"');res.send(Buffer.from(b));}));r.post("/import/validate",permit("admin"),excelUpload.single("file"),asyncHandler(async(req,res)=>{if(!req.file)throw new ApiError(400,"Upload an .xlsx file using field 'file'.");const p=await parseWorkbook(req.file.buffer,String(req.body.academicYear||""));ok(res,{rowCount:p.rowCount,validCount:p.validCount,invalidCount:p.invalidCount,preview:p.rows.slice(0,25).map(({departmentId,courseId,semesterId,freshSubjectIds,backlogSubjectIds,...x})=>x),errors:p.errors},p.errors.length?"Validation completed with errors.":"Workbook is valid and ready to import.");}));r.post("/import/commit",permit("admin"),excelUpload.single("file"),asyncHandler(async(req,res)=>{if(!req.file)throw new ApiError(400,"Upload an .xlsx file.");const y=String(req.body.academicYear||""),p=await parseWorkbook(req.file.buffer,y);ok(res,await commitWorkbook(p,y),"Student import completed.",201);}));r.get("/:id",asyncHandler(async(req,res)=>{const s=await Student.findById(req.params.id).populate("department course semester subjects").lean();if(!s)throw new ApiError(404,"Student not found.");const backlog=await BacklogRegistration.find({student:s._id,status:"registered"}).populate("subject").lean();ok(res,{...s,backlogRegistrations:backlog});}));r.post("/",permit("admin"),asyncHandler(async(req,res)=>ok(res,await Student.create(req.body),"Student created.",201)));r.patch("/:id",permit("admin"),asyncHandler(async(req,res)=>{const s=await Student.findByIdAndUpdate(req.params.id,req.body,{new:true,runValidators:true});if(!s)throw new ApiError(404,"Student not found.");ok(res,s,"Student updated.");}));r.delete("/:id",permit("admin"),asyncHandler(async(req,res)=>{const s=await Student.findByIdAndUpdate(req.params.id,{active:false},{new:true});if(!s)throw new ApiError(404,"Student not found.");ok(res,{id:s._id},"Student archived.");}));export default r;
+import { Router } from "express";
+import { Student, BacklogRegistration } from "../models/index.js";
+import { requireAuth, permit } from "../middleware/auth.js";
+import { excelUpload } from "../middleware/upload.js";
+import {
+  parseWorkbook,
+  commitWorkbook,
+  templateBuffer,
+} from "../services/studentImport.js";
+import { ApiError, asyncHandler, ok } from "../utils/http.js";
+const r = Router();
+r.use(requireAuth);
+r.get(
+  "/",
+  asyncHandler(async (req, res) => {
+    const filter = { active: true };
+    if (req.query.type) filter.type = req.query.type;
+    if (req.query.q)
+      filter.$or = [
+        { rollNo: { $regex: req.query.q, $options: "i" } },
+        { name: { $regex: req.query.q, $options: "i" } },
+      ];
+    const items = await Student.find(filter)
+      .populate("department course semester subjects")
+      .sort({ rollNo: 1 })
+      .lean();
+    ok(res, { items, total: items.length });
+  }),
+);
+r.get(
+  "/import/template",
+  asyncHandler(async (_req, res) => {
+    const b = await templateBuffer();
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    );
+    res.setHeader(
+      "Content-Disposition",
+      'attachment; filename="student-import-template.xlsx"',
+    );
+    res.send(Buffer.from(b));
+  }),
+);
+r.post(
+  "/import/validate",
+  permit("admin"),
+  excelUpload.single("file"),
+  asyncHandler(async (req, res) => {
+    if (!req.file)
+      throw new ApiError(400, "Upload an .xlsx file using field 'file'.");
+    const p = await parseWorkbook(
+      req.file.buffer,
+      String(req.body.academicYear || ""),
+    );
+    ok(
+      res,
+      {
+        rowCount: p.rowCount,
+        validCount: p.validCount,
+        invalidCount: p.invalidCount,
+        preview: p.rows
+          .slice(0, 25)
+          .map(
+            ({
+              departmentId,
+              courseId,
+              semesterId,
+              freshSubjectIds,
+              backlogSubjectIds,
+              ...x
+            }) => x,
+          ),
+        errors: p.errors,
+      },
+      p.errors.length
+        ? "Validation completed with errors."
+        : "Workbook is valid and ready to import.",
+    );
+  }),
+);
+r.post(
+  "/import/commit",
+  permit("admin"),
+  excelUpload.single("file"),
+  asyncHandler(async (req, res) => {
+    if (!req.file) throw new ApiError(400, "Upload an .xlsx file.");
+    const y = String(req.body.academicYear || ""),
+      p = await parseWorkbook(req.file.buffer, y);
+    ok(res, await commitWorkbook(p, y), "Student import completed.", 201);
+  }),
+);
+r.get(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    const s = await Student.findById(req.params.id)
+      .populate("department course semester subjects")
+      .lean();
+    if (!s) throw new ApiError(404, "Student not found.");
+    const backlog = await BacklogRegistration.find({
+      student: s._id,
+      status: "registered",
+    })
+      .populate("subject")
+      .lean();
+    ok(res, { ...s, backlogRegistrations: backlog });
+  }),
+);
+r.post(
+  "/",
+  permit("admin"),
+  asyncHandler(async (req, res) =>
+    ok(res, await Student.create(req.body), "Student created.", 201),
+  ),
+);
+r.patch(
+  "/:id",
+  permit("admin"),
+  asyncHandler(async (req, res) => {
+    const s = await Student.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+    if (!s) throw new ApiError(404, "Student not found.");
+    ok(res, s, "Student updated.");
+  }),
+);
+r.delete(
+  "/:id",
+  permit("admin"),
+  asyncHandler(async (req, res) => {
+    const s = await Student.findByIdAndUpdate(
+      req.params.id,
+      { active: false },
+      { new: true },
+    );
+    if (!s) throw new ApiError(404, "Student not found.");
+    ok(res, { id: s._id }, "Student archived.");
+  }),
+);
+export default r;

@@ -87,7 +87,11 @@ router.get(
     const rows = await Timetable.find(filter)
       .populate({
         path: "subject",
-        populate: [{ path: "department" }, { path: "semester" }, { path: "course" }],
+        populate: [
+          { path: "department" },
+          { path: "semester" },
+          { path: "course" },
+        ],
       })
       .populate("examSession")
       .sort({ date: 1, startTime: 1 })
@@ -99,7 +103,9 @@ router.get(
 router.get(
   "/timetable/subjects/:sessionId",
   asyncHandler(async (req, res) => {
-    const sessionExists = await ExamSession.exists({ _id: req.params.sessionId });
+    const sessionExists = await ExamSession.exists({
+      _id: req.params.sessionId,
+    });
     if (!sessionExists) throw new ApiError(404, "Exam session not found.");
     const subjects = await Subject.find()
       .populate("department semester course")
@@ -115,7 +121,10 @@ router.post(
   asyncHandler(async (req, res) => {
     const { examSessionId, subjectIds } = req.body;
     if (!examSessionId || !Array.isArray(subjectIds) || !subjectIds.length) {
-      throw new ApiError(422, "examSessionId and a non-empty subjectIds array are required.");
+      throw new ApiError(
+        422,
+        "examSessionId and a non-empty subjectIds array are required.",
+      );
     }
     const rows = await generateTimetable(examSessionId, subjectIds);
     ok(res, rows, "Conflict-free timetable generated.", 201);
@@ -126,7 +135,11 @@ router.patch(
   "/timetable/:id",
   permit("admin"),
   asyncHandler(async (req, res) => {
-    ok(res, await manualMove(req.params.id, req.body), "Timetable entry updated.");
+    ok(
+      res,
+      await manualMove(req.params.id, req.body),
+      "Timetable entry updated.",
+    );
   }),
 );
 
@@ -162,8 +175,17 @@ router.post(
   permit("admin"),
   asyncHandler(async (req, res) => {
     const { examSessionId, date, slotLabel, classroomIds } = req.body;
-    if (!examSessionId || !date || !slotLabel || !Array.isArray(classroomIds) || !classroomIds.length) {
-      throw new ApiError(422, "examSessionId, date, slotLabel and classroomIds are required.");
+    if (
+      !examSessionId ||
+      !date ||
+      !slotLabel ||
+      !Array.isArray(classroomIds) ||
+      !classroomIds.length
+    ) {
+      throw new ApiError(
+        422,
+        "examSessionId, date, slotLabel and classroomIds are required.",
+      );
     }
     const rows = await generateSeating({ ...req.body, userId: req.user._id });
     ok(res, rows, "Conflict-free seating generated.", 201);
