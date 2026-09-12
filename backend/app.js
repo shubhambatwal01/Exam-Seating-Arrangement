@@ -1,39 +1,54 @@
-const express = require("express");
-const cors = require("cors");
-require("dotenv").config();
-const connectDB = require("./config/dbConnection");
-const subjectRoutes = require("./routes/subjectRoute");
-const studentRoutes = require("./routes/studentRoute");
-const facultyRoutes = require("./routes/facultyRoute");
-const timetableRoutes = require("./routes/timetableRoutes");
-const holidayRoutes = require("./routes/holidayRoute");
-const { errorHandler, notFound } = require("./middleware/errorHandler");
-
-const app = express();
-
-app.use(cors());
-app.use(express.json());
-
-app.use("/api/subjects", subjectRoutes);
-app.use("/api/students", studentRoutes);
-app.use("/api/faculty", facultyRoutes);
-app.use("/api/timetable", timetableRoutes);
-app.use("/api/holidays", holidayRoutes);
-
-app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
-});
-
+import "dotenv/config";
+import express from "express";
+import cors from "cors";
+import { connectDB } from "./config/db.js";
+import auth from "./routes/auth.routes.js";
+import master from "./routes/master.routes.js";
+import students from "./routes/students.routes.js";
+import exams from "./routes/exams.routes.js";
+import reports from "./routes/reports.routes.js";
+import admin from "./routes/admin.routes.js";
+import { notFound, errorHandler } from "./middleware/error.js";
+const app = express(),
+  origins = (process.env.CLIENT_URL || "http://localhost:5173")
+    .split(",")
+    .map((x) => x.trim())
+    .filter(Boolean);
+app.use(
+  cors({
+    origin(origin, cb) {
+      if (!origin || origins.includes(origin)) return cb(null, true);
+      cb(new Error(`CORS blocked origin: ${origin}`));
+    },
+    credentials: true,
+  }),
+);
+app.use(express.json({ limit: "2mb" }));
+app.use(express.urlencoded({ extended: true }));
+app.get("/api/v1/health", (_q, res) =>
+  res.json({
+    success: true,
+    data: { status: "ok", service: "Exam Seating & Timetable API" },
+    message: "API is healthy.",
+    error: null,
+  }),
+);
+app.use("/api/v1/auth", auth);
+app.use("/api/v1", master);
+app.use("/api/v1/students", students);
+app.use("/api/v1", exams);
+app.use("/api/v1/reports", reports);
+app.use("/api/v1", admin);
 app.use(notFound);
 app.use(errorHandler);
-
-const PORT = process.env.PORT || 1101;
-
-const startServer = async () => {
-  await connectDB();
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+const port = Number(process.env.PORT || 5000);
+connectDB()
+  .then(() =>
+    app.listen(port, () =>
+      console.log(`Exam API: http://localhost:${port}/api/v1`),
+    ),
+  )
+  .catch((e) => {
+    console.error("Failed to start:", e.message);
+    process.exit(1);
   });
-};
-
-startServer();
