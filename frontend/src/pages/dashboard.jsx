@@ -1,64 +1,78 @@
-function Dashboard() {
+import { useEffect, useState } from "react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+} from "recharts";
+import api from "../services/axios";
+import { PageTitle, panel } from "../components/UI";
+export default function Dashboard() {
+  const [data, setData] = useState(null);
+  useEffect(() => {
+    api
+      .get("/dashboard")
+      .then((r) => setData(r.data.data))
+      .catch(() => setData({ stats: {} }));
+  }, []);
+  const s = data?.stats || {};
+  const cards = [
+    ["Total Students", s.totalStudents],
+    ["Fresh Students", s.freshStudents],
+    ["Backlog Students", s.backlogStudents],
+    ["Upcoming Exams", s.upcomingExams],
+    ["Classrooms Utilized", s.classroomsUtilized],
+    ["Active Sessions", s.activeExamSessions],
+  ];
   return (
-    <div className="space-y-6">
-      <div className="rounded-32px border border-white/10 bg-slate-950/80 p-8 shadow-2xl shadow-slate-950/30 backdrop-blur-xl">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-sm uppercase tracking-[0.3em] text-cyan-300/80">
-              Welcome back
-            </p>
-            <h2 className="mt-3 text-3xl font-semibold text-white">
-              Exam Scheduler Overview
-            </h2>
-            <p className="mt-3 max-w-2xl text-slate-400">
-              Manage subjects, students, faculty, exam settings, and
-              auto-generated timetables from one place.
-            </p>
-          </div>
-          <div className="rounded-3xl bg-linear-to-br from-slate-900/80 to-slate-800/90 px-6 py-4 text-slate-100 shadow-2xl shadow-slate-950/20">
-            <p className="text-sm uppercase tracking-[0.3em] text-cyan-300/80">
-              Next release
-            </p>
-            <p className="mt-2 text-xl font-semibold">
-              Calendar export & PDF timetable
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-        {[
-          {
-            label: "Subjects",
-            value: "24",
-            accent: "bg-cyan-500/10 text-cyan-200",
-          },
-          {
-            label: "Students",
-            value: "184",
-            accent: "bg-amber-500/10 text-amber-200",
-          },
-          {
-            label: "Faculty",
-            value: "18",
-            accent: "bg-violet-500/10 text-violet-200",
-          },
-        ].map((card) => (
-          <div
-            key={card.label}
-            className={`rounded-[28px] border border-white/10 p-6 ${card.accent} shadow-xl shadow-slate-950/10`}
-          >
-            <p className="text-sm uppercase tracking-[0.2em] text-slate-400">
-              {card.label}
-            </p>
-            <p className="mt-4 text-4xl font-semibold text-white">
-              {card.value}
+    <>
+      <PageTitle
+        title="Dashboard"
+        description="Live overview of examination data, capacity and upcoming activity."
+      />
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {cards.map(([k, v]) => (
+          <div className={panel} key={k}>
+            <p className="text-sm text-slate-500">{k}</p>
+            <p className="mt-2 text-3xl font-semibold text-[#034568]">
+              {v ?? "—"}
             </p>
           </div>
         ))}
       </div>
-    </div>
+      <div className="mt-4 grid gap-4 xl:grid-cols-2">
+        <div className={panel}>
+          <h2 className="mb-3 font-semibold">Department-wise Students</h2>
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data?.departmentDistribution || []}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="count" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        <div className={panel}>
+          <h2 className="mb-3 font-semibold">Semester-wise Students</h2>
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data?.semesterDistribution || []}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="count" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
-
-export default Dashboard;
