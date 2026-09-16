@@ -10,14 +10,24 @@ export function AuthProvider({ children }) {
     }
   });
   const login = async (email, password) => {
-    const { data } = await api.post("/auth/login", { email, password });
-    localStorage.setItem("esa_token", data.data.token);
-    localStorage.setItem("esa_user", JSON.stringify(data.data.user));
-    setUser(data.data.user);
-  };
+    const response = await api.post("/auth/login", {
+      email,
+      password,
+    });
+
+    const { token, user } = response.data.data;
+
+    localStorage.setItem("token", token);
+
+    localStorage.setItem("user", JSON.stringify(user));
+
+    setUser(user);
+
+    return user;
+  }
   const logout = () => {
-    localStorage.removeItem("esa_token");
-    localStorage.removeItem("esa_user");
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
     setUser(null);
   };
   return (
