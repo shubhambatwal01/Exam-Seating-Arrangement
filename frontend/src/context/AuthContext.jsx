@@ -1,14 +1,36 @@
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import api from "../services/axios";
-const C = createContext(null);
+
+const AuthContext = createContext(null);
+
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("esa_user"));
-    } catch {
-      return null;
-    }
-  });
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const restoreAuth = () => {
+      try {
+        const token = localStorage.getItem("token");
+        const savedUser = localStorage.getItem("user");
+
+        if (token && savedUser) {
+          setUser(JSON.parse(savedUser));
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error("Failed to restore authentication:", error);
+
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    restoreAuth();
+  }, []);
+
   const login = async (email, password) => {
     const response = await api.post("/auth/login", {
       email,
@@ -24,16 +46,28 @@ export function AuthProvider({ children }) {
     setUser(user);
 
     return user;
-  }
+  };
+
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setUser(null);
   };
   return (
-    <C.Provider value={useMemo(() => ({ user, login, logout }), [user])}>
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        logout,
+        loading,
+        isAuthenticated: !!user,
+      }}
+    >
       {children}
-    </C.Provider>
+    </AuthContext.Provider>
   );
 }
-export const useAuth = () => useContext(C);
+
+export function useAuth() {
+  return useContext(AuthContext);
+}
