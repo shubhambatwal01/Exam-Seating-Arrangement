@@ -1,40 +1,69 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Sidebar from "./components/sidebar";
-import Dashboard from "./pages/dashboard";
-import Subjects from "./pages/subjects";
-import Students from "./pages/students";
-import Faculty from "./pages/Faculty";
-import ExamSettings from "./pages/examSettings";
-import GenerateTimetable from "./pages/GenerateTimetable";
+import { Navigate, Route, Routes } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
+import NavSidebar from "./components/NavSidebar";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import MasterData from "./pages/MasterData";
+import Students from "./pages/Students";
+import ExamSessions from "./pages/ExamSessions";
 import Timetable from "./pages/Timetable";
-
-function App() {
+import Seating from "./pages/Seating";
+import Reports from "./pages/Reports";
+import Users from "./pages/Users";
+import Settings from "./pages/Settings";
+export default function App() {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <BrowserRouter>
-        <div className="mx-auto flex min-h-screen max-w-1400px gap-4 px-4 py-6 lg:px-8">
-          <aside className="hidden w-72 shrink-0 rounded-3xl bg-slate-900/90 p-6 shadow-2xl shadow-slate-950/40 backdrop-blur-xl lg:block">
-            <Sidebar />
-          </aside>
-
-          <main className="flex-1 rounded-3xl bg-white/5 p-6 shadow-2xl shadow-slate-950/20 backdrop-blur-xl">
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/subjects" element={<Subjects />} />
-              <Route path="/students" element={<Students />} />
-              <Route path="/faculty" element={<Faculty />} />
-              <Route path="/exam-settings" element={<ExamSettings />} />
-              <Route
-                path="/generate-timetable"
-                element={<GenerateTimetable />}
-              />
-              <Route path="/timetable" element={<Timetable />} />
-            </Routes>
-          </main>
-        </div>
-      </BrowserRouter>
-    </div>
+    <AuthProvider>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route
+          element={
+            <ProtectedRoute>
+              <NavSidebar />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Dashboard />} />
+          <Route path="students" element={<Students />} />
+          <Route
+            path="departments"
+            element={<MasterData resource="departments" />}
+          />
+          <Route path="courses" element={<MasterData resource="courses" />} />
+          <Route
+            path="semesters"
+            element={<MasterData resource="semesters" />}
+          />
+          <Route path="subjects" element={<MasterData resource="subjects" />} />
+          <Route
+            path="classrooms"
+            element={<MasterData resource="classrooms" />}
+          />
+          <Route path="faculty" element={<MasterData resource="faculty" />} />
+          <Route path="exam-sessions" element={<ExamSessions />} />
+          <Route path="timetable" element={<Timetable />} />
+          <Route path="seating" element={<Seating />} />
+          <Route path="reports" element={<Reports />} />
+          <Route
+            path="users"
+            element={
+              <ProtectedRoute roles={["admin"]}>
+                <Users />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="settings"
+            element={
+              <ProtectedRoute roles={["admin"]}>
+                <Settings />
+              </ProtectedRoute>
+            }
+          />
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </AuthProvider>
   );
 }
-
-export default App;
