@@ -1,89 +1,194 @@
 import { useEffect, useState } from "react";
-import { getTimetable } from "../services/timetableService";
-
-function Timetable() {
-  const [data, setData] = useState([]);
-
+import api from "../services/axios";
+import { useAuth } from "../context/AuthContext";
+import {
+  Alert,
+  Empty,
+  PageTitle,
+  input,
+  panel,
+  primary,
+} from "../components/UI";
+const day = (v) => String(v || "").slice(0, 10);
+export default function Timetable() {
+  const { user } = useAuth(),
+    [sessions, setSessions] = useState([]),
+    [sessionId, setSessionId] = useState(""),
+    [subjects, setSubjects] = useState([]),
+    [selected, setSelected] = useState([]),
+    [rows, setRows] = useState([]),
+    [error, setError] = useState(""),
+    [msg, setMsg] = useState("");
   useEffect(() => {
-    load();
+    api.get("/exam-sessions").then((r) => setSessions(r.data.data));
   }, []);
-
-  const load = async () => {
-    const res = await getTimetable();
-    setData(res);
+  useEffect(() => {
+    if (!sessionId) return;
+    Promise.all([
+      api.get(`/timetable/subjects/${sessionId}`),
+      api.get("/timetable", { params: { examSessionId: sessionId } }),
+    ]).then(([a, b]) => {
+      setSubjects(a.data.data);
+      setRows(b.data.data);
+    });
+  }, [sessionId]);
+  const generate = async () => {
+    try {
+      setError("");
+      const r = await api.post("/timetable/generate", {
+        examSessionId: sessionId,
+        subjectIds: selected,
+      });
+      setRows(r.data.data);
+      setMsg(r.data.message);
+    } catch (e) {
+      setError(e.response?.data?.message || "Generation failed.");
+    }
   };
-
+  const edit = async (row, field, value) => {
+    try {
+      const patch = {};
+      patch[field] = value;
+      const s = sessions.find((x) => x._id === sessionId),
+        slot = s?.timeSlots?.find(
+          (x) => x.label === (field === "slotLabel" ? value : row.slotLabel),
+        );
+      if (field === "slotLabel" && slot) {
+        patch.startTime = slot.startTime;
+        patch.endTime = slot.endTime;
+      }
+      await api.patch(`/timetable/${row._id}`, patch);
+      const r = await api.get("/timetable", {
+        params: { examSessionId: sessionId },
+      });
+      setRows(r.data.data);
+    } catch (e) {
+      setError(e.response?.data?.message);
+    }
+  };
   return (
-    <div className="space-y-6">
-      <div className="rounded-32px border border-white/10 bg-slate-950/80 p-8 shadow-2xl shadow-slate-950/30 backdrop-blur-xl">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-sm uppercase tracking-[0.3em] text-cyan-300/80">
-              Exam Timetable
-            </p>
-            <h1 className="mt-2 text-3xl font-semibold text-white">
-              Generated Schedule
-            </h1>
-          </div>
-          <button
-            className="rounded-3xl bg-linear-to-r from-cyan-500 to-blue-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:from-cyan-400 hover:to-blue-400"
-            onClick={load}
+    <>
+      <PageTitle
+        title="Timetable Generator"
+        description="Students' actual subject appearances drive clash detection; current semester is never used as a shortcut."
+      />
+      <Alert>{error}</Alert>
+      <Alert type="success">{msg}</Alert>
+      <div className={`${panel} mb-4`}>
+        <label className="block max-w-md text-sm">
+          Exam Session
+          <select
+            className={input}
+            value={sessionId}
+            onChange={(e) => {
+              setSessionId(e.target.value);
+              setSelected([]);
+            }}
           >
-            Refresh
-          </button>
-        </div>
-      </div>
-
-      <div className="overflow-hidden rounded-32px border border-white/10 bg-slate-950/80 shadow-2xl shadow-slate-950/30">
-        <table className="min-w-full divide-y divide-slate-800 text-left">
-          <thead className="bg-slate-900/90 text-slate-400">
-            <tr>
-              <th className="px-6 py-4 text-sm font-semibold uppercase tracking-[0.2em]">
-                Subject
-              </th>
-              <th className="px-6 py-4 text-sm font-semibold uppercase tracking-[0.2em]">
-                Date
-              </th>
-              <th className="px-6 py-4 text-sm font-semibold uppercase tracking-[0.2em]">
-                Session
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-800 bg-slate-950/80">
-            {data.length ? (
-              data.flatMap((tt) =>
-                tt.exams.map((exam) => (
-                  <tr
-                    key={`${tt._id}-${exam.subjectCode}-${exam.date}`}
-                    className="border-b border-slate-800 hover:bg-slate-900/80"
-                  >
-                    <td className="px-6 py-4 text-sm text-slate-100">
-                      {exam.subjectName}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-300">
-                      {new Date(exam.date).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-300">
-                      {exam.session}
-                    </td>
-                  </tr>
-                )),
-              )
-            ) : (
-              <tr>
-                <td
-                  colSpan={3}
-                  className="px-6 py-12 text-center text-slate-500"
+            <option value="">Select session</option>
+            {sessions.map((x) => (
+              <option key={x._id} value={x._id}>
+                {x.name} - {x.academicYear}
+              </option>
+            ))}
+          </select>
+        </label>
+        {sessionId && user?.role === "admin" && (
+          <>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {subjects.map((s) => (
+                <label
+                  key={s._id}
+                  className="flex items-center gap-2 rounded border p-2 text-sm"
                 >
-                  No timetable found yet. Generate one to see it here.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                  <input
+                    type="checkbox"
+                    checked={selected.includes(s._id)}
+                    onChange={(e) =>
+                      setSelected(
+                        e.target.checked
+                          ? [...selected, s._id]
+                          : selected.filter((x) => x !== s._id),
+                      )
+                    }
+                  />
+                  <span>
+                    <b>{s.code}</b> — {s.name}
+                  </span>
+                </label>
+              ))}
+            </div>
+            <button
+              className={`${primary} mt-3`}
+              disabled={!selected.length}
+              onClick={generate}
+            >
+              Generate Conflict-free Timetable
+            </button>
+          </>
+        )}
       </div>
-    </div>
+      <div className={`${panel} overflow-x-auto`}>
+        {rows.length ? (
+          <table className="w-full min-w-212.5 text-sm">
+            <thead className="bg-[#cff4fc]">
+              <tr>
+                <th className="p-2">Date</th>
+                <th className="p-2">Slot</th>
+                <th className="p-2">Time</th>
+                <th className="p-2 text-left">Subject</th>
+                <th className="p-2">Mode</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr className="border-b" key={r._id}>
+                  <td className="p-2">
+                    {user?.role === "admin" ? (
+                      <input
+                        type="date"
+                        className={input}
+                        value={day(r.date)}
+                        onChange={(e) => edit(r, "date", e.target.value)}
+                      />
+                    ) : (
+                      day(r.date)
+                    )}
+                  </td>
+                  <td className="p-2">
+                    {user?.role === "admin" ? (
+                      <select
+                        className={input}
+                        value={r.slotLabel}
+                        onChange={(e) => edit(r, "slotLabel", e.target.value)}
+                      >
+                        {sessions
+                          .find((x) => x._id === sessionId)
+                          ?.timeSlots?.map((s) => (
+                            <option key={s.label}>{s.label}</option>
+                          ))}
+                      </select>
+                    ) : (
+                      r.slotLabel
+                    )}
+                  </td>
+                  <td className="p-2 text-center">
+                    {r.startTime}-{r.endTime}
+                  </td>
+                  <td className="p-2">
+                    <b>{r.subject?.code}</b> — {r.subject?.name}
+                  </td>
+                  <td className="p-2 text-center">
+                    {r.manualOverride ? "Manual" : "Auto"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <Empty text="Select a session or generate a timetable." />
+        )}
+      </div>
+    </>
   );
 }
-
-export default Timetable;

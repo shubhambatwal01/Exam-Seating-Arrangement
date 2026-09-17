@@ -1,125 +1,267 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import api from "../services/axios";
+import { useAuth } from "../context/AuthContext";
 import {
-  getStudents,
-  createStudent,
-  deleteStudent,
-} from "../services/studentService";
+  Alert,
+  Empty,
+  PageTitle,
+  input,
+  panel,
+  primary,
+} from "../components/UI";
 
-function Students() {
-  const [students, setStudents] = useState([]);
-  const [form, setForm] = useState({
-    prn: "",
-    name: "",
-    email: "",
-    semester: "",
-    courseId: "",
-  });
+export default function Students() {
+  const { user } = useAuth();
+  const [items, setItems] = useState([]);
+  const [query, setQuery] = useState("");
+  const [file, setFile] = useState(null);
+  const [academicYear, setAcademicYear] = useState("2026-27");
+  const [validation, setValidation] = useState(null);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  const loadStudents = async () => {
-    const res = await getStudents();
-    setStudents(res.data);
+  const load = async () => {
+    const response = await api.get("/students", { params: { q: query } });
+    setItems(response.data.data.items || []);
   };
 
   useEffect(() => {
-    loadStudents();
+    load().catch((err) =>
+      setError(err.response?.data?.message || "Unable to load students."),
+    );
   }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    await createStudent(form);
-    setForm({ prn: "", name: "", email: "", semester: "", courseId: "" });
-    loadStudents();
+  const buildFormData = () => {
+    const data = new FormData();
+    data.append("file", file);
+    data.append("academicYear", academicYear);
+    return data;
+  };
+
+  const validateExcel = async () => {
+    if (!file) {
+      setError("Choose an .xlsx file first.");
+      return;
+    }
+
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const response = await api.post(
+        "/students/import/validate",
+        buildFormData(),
+      );
+      setValidation(response.data.data);
+      setMessage(response.data.message);
+    } catch (err) {
+      setValidation(null);
+      setError(err.response?.data?.message || "Excel validation failed.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const commitImport = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      const response = await api.post(
+        "/students/import/commit",
+        buildFormData(),
+      );
+      setMessage(
+        `${response.data.message} ${response.data.data.studentsInserted} student(s), ${response.data.data.backlogRegistrationsCreated} backlog registration(s).`,
+      );
+      setValidation(null);
+      setFile(null);
+      await load();
+    } catch (err) {
+      setError(err.response?.data?.message || "Excel import failed.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const downloadTemplate = async () => {
+    const response = await api.get("/students/import/template", {
+      responseType: "blob",
+    });
+    const url = URL.createObjectURL(response.data);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "student-import-template.xlsx";
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-32px border border-white/10 bg-slate-950/80 p-8 shadow-2xl shadow-slate-950/30 backdrop-blur-xl">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm uppercase tracking-[0.3em] text-cyan-300/80">
-              Students
-            </p>
-            <h1 className="mt-3 text-3xl font-semibold text-white">
-              Student Registry
-            </h1>
-          </div>
-          <button className="rounded-3xl bg-linear-to-r from-cyan-500 to-blue-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:from-cyan-400 hover:to-blue-400">
-            Refresh
-          </button>
-        </div>
+    <>
+      <PageTitle
+        title="Students"
+        description="Import fresh and backlog exam appearances from Excel. Validation never writes to MongoDB."
+      />
+      <Alert>{error}</Alert>
+      <Alert type="success">{message}</Alert>
 
-        <form
-          onSubmit={handleSubmit}
-          className="mt-8 grid gap-4 sm:grid-cols-2"
-        >
-          <input
-            value={form.prn}
-            placeholder="PRN Number"
-            className="rounded-3xl border border-slate-700 bg-slate-900/90 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-500"
-            onChange={(e) => setForm({ ...form, prn: e.target.value })}
-          />
-          <input
-            value={form.name}
-            placeholder="Full Name"
-            className="rounded-3xl border border-slate-700 bg-slate-900/90 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-500"
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-          />
-          <input
-            value={form.email}
-            type="email"
-            placeholder="Email"
-            className="rounded-3xl border border-slate-700 bg-slate-900/90 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-500"
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
-          />
-          <input
-            value={form.semester}
-            type="number"
-            min="1"
-            placeholder="Semester"
-            className="rounded-3xl border border-slate-700 bg-slate-900/90 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-500"
-            onChange={(e) => setForm({ ...form, semester: e.target.value })}
-          />
-          <input
-            value={form.courseId}
-            placeholder="Course ID"
-            className="col-span-full rounded-3xl border border-slate-700 bg-slate-900/90 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-500"
-            onChange={(e) => setForm({ ...form, courseId: e.target.value })}
-          />
-          <button className="col-span-full rounded-3xl bg-cyan-500 px-6 py-3 text-base font-semibold text-slate-950 transition hover:bg-cyan-400">
-            Add Student
-          </button>
-        </form>
-      </div>
-
-      <div className="rounded-32px border border-white/10 bg-slate-950/80 p-6 shadow-2xl shadow-slate-950/30 backdrop-blur-xl">
-        <h2 className="text-xl font-semibold text-white">Student List</h2>
-        <div className="mt-5 space-y-3">
-          {students.map((student) => (
-            <div
-              key={student._id}
-              className="flex flex-col gap-2 rounded-3xl border border-slate-800 bg-slate-900/90 p-4 sm:flex-row sm:items-center sm:justify-between"
+      {user?.role === "admin" && (
+        <div className={`${panel} mb-4`}>
+          <div className="flex flex-wrap items-end gap-3">
+            <label className="text-sm">
+              Academic Year
+              <input
+                className={input}
+                value={academicYear}
+                onChange={(event) => setAcademicYear(event.target.value)}
+              />
+            </label>
+            <label className="text-sm">
+              Excel File
+              <input
+                className={`${input} py-1`}
+                type="file"
+                accept=".xlsx"
+                onChange={(event) => {
+                  setFile(event.target.files?.[0] || null);
+                  setValidation(null);
+                }}
+              />
+            </label>
+            <button
+              className={primary}
+              type="button"
+              onClick={validateExcel}
+              disabled={busy}
             >
-              <div>
-                <p className="text-base font-semibold text-white">
-                  {student.name}
-                </p>
-                <p className="text-sm text-slate-400">{student.email}</p>
-              </div>
+              {busy ? "Working..." : "Validate Excel"}
+            </button>
+            <button
+              className={primary}
+              type="button"
+              onClick={downloadTemplate}
+            >
+              Download Template
+            </button>
+            {validation && validation.invalidCount === 0 && (
               <button
-                className="rounded-2xl bg-rose-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-rose-400"
-                onClick={() => deleteStudent(student._id).then(loadStudents)}
+                className="rounded-md border border-green-600 px-3 py-[6px] text-green-700 hover:bg-green-600 hover:text-white disabled:opacity-50"
+                type="button"
+                disabled={busy}
+                onClick={commitImport}
               >
-                Delete
+                Commit Import
               </button>
+            )}
+          </div>
+
+          {validation && (
+            <div className="mt-4 text-sm">
+              <p>
+                <b>Rows:</b> {validation.rowCount} &nbsp; <b>Valid:</b>{" "}
+                {validation.validCount}
+                &nbsp; <b>Invalid:</b> {validation.invalidCount}
+              </p>
+
+              {validation.errors?.map((item) => (
+                <div
+                  key={item.row}
+                  className="mt-2 rounded bg-red-50 p-2 text-red-700"
+                >
+                  Row {item.row} ({item.rollNo || "no roll no"}):{" "}
+                  {item.errors.join(" ")}
+                </div>
+              ))}
+
+              {validation.preview?.length > 0 && (
+                <div className="mt-4 overflow-x-auto">
+                  <h3 className="mb-2 font-semibold">Validated Preview</h3>
+                  <table className="w-full min-w-212.5 border-collapse text-xs">
+                    <thead className="bg-[#cff4fc]">
+                      <tr>
+                        <th className="p-2 text-left">Row</th>
+                        <th className="p-2 text-left">Roll No</th>
+                        <th className="p-2 text-left">Name</th>
+                        <th className="p-2 text-left">Course</th>
+                        <th className="p-2">Sem</th>
+                        <th className="p-2 text-left">Fresh Subjects</th>
+                        <th className="p-2 text-left">Backlog Subjects</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {validation.preview.map((row) => (
+                        <tr key={row.rowNumber} className="border-b">
+                          <td className="p-2">{row.rowNumber}</td>
+                          <td className="p-2">{row.rollNo}</td>
+                          <td className="p-2">{row.name}</td>
+                          <td className="p-2">{row.courseCode}</td>
+                          <td className="p-2 text-center">{row.semester}</td>
+                          <td className="p-2">
+                            {row.freshSubjectCodes?.join(", ") || "—"}
+                          </td>
+                          <td className="p-2">
+                            {row.backlogSubjectCodes?.join(", ") || "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
-          ))}
-          {!students.length && (
-            <p className="text-slate-500">No students added yet.</p>
           )}
         </div>
+      )}
+
+      <div className={`${panel} overflow-x-auto`}>
+        <div className="mb-3 flex max-w-xl gap-2">
+          <input
+            className={input}
+            placeholder="Search roll no or name"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={(event) => event.key === "Enter" && load()}
+          />
+          <button className={primary} onClick={load}>
+            Search
+          </button>
+        </div>
+
+        {items.length ? (
+          <table className="w-full min-w-212.5 text-sm">
+            <thead className="bg-[#cff4fc]">
+              <tr>
+                <th className="p-2 text-left">Roll No</th>
+                <th className="p-2 text-left">Name</th>
+                <th className="p-2 text-left">Course</th>
+                <th className="p-2">Semester</th>
+                <th className="p-2">Type</th>
+                <th className="p-2 text-left">Current Subjects</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((student) => (
+                <tr key={student._id} className="border-b">
+                  <td className="p-2 font-medium">{student.rollNo}</td>
+                  <td className="p-2">{student.name}</td>
+                  <td className="p-2">{student.course?.code}</td>
+                  <td className="p-2 text-center">
+                    {student.semester?.number}
+                  </td>
+                  <td className="p-2 text-center capitalize">{student.type}</td>
+                  <td className="p-2">
+                    {student.subjects
+                      ?.map((subject) => subject.code)
+                      .join(", ") || "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <Empty />
+        )}
       </div>
-    </div>
+    </>
   );
 }
-
-export default Students;
