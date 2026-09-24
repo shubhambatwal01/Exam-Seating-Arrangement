@@ -18,7 +18,7 @@ function coordinates(room) {
       seats.push({
         row,
         col,
-        seatNo: `${room.roomNo}-${String(seats.length + 1).padStart(2, "0")}`,
+        seatNo: `${room.roomNo}-L-${String(seats.length + 1).padStart(2, "0")}`,
       });
     }
   }
