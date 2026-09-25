@@ -8,6 +8,7 @@ import {
   timetablePdf,
   seatingPdf,
   hallTicketPdf,
+  hallTicketData,
 } from "../services/reports.js";
 const r = Router();
 r.use(requireAuth);
@@ -57,6 +58,18 @@ r.get(
     await seatingPdf(res, req.params.id);
   }),
 );
+r.get(
+  "/hall-ticket/:studentId/preview",
+  asyncHandler(async (req, res) => {
+    res.json({
+      success: true,
+      data: await hallTicketData(req.params.studentId, req.query.examSessionId),
+      message: "Hall ticket preview loaded.",
+      error: null,
+    });
+  }),
+);
+
 r.get(
   "/hall-ticket/:studentId.pdf",
   asyncHandler(async (req, res) => {

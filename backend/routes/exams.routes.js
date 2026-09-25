@@ -9,6 +9,7 @@ import {
 import { permit, requireAuth } from "../middleware/auth.js";
 import { generateSeating } from "../services/seating.js";
 import { generateTimetable, manualMove } from "../services/timetable.js";
+import { buildTimetableFormation } from "../services/formation.js";
 import { ApiError, asyncHandler, ok } from "../utils/http.js";
 
 const router = Router();
@@ -76,6 +77,16 @@ router.delete(
 );
 
 // Timetable
+router.get(
+  "/timetable/formation",
+  asyncHandler(async (req, res) => {
+    if (!req.query.examSessionId) {
+      throw new ApiError(422, "examSessionId is required.");
+    }
+    ok(res, await buildTimetableFormation(req.query.examSessionId));
+  }),
+);
+
 router.get(
   "/timetable",
   asyncHandler(async (req, res) => {
