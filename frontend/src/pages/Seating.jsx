@@ -101,7 +101,7 @@ export default function Seating() {
     <>
       <PageTitle
         title="Seating Arrangement"
-        description="Fresh and backlog appearances are seated by subject; orthogonally adjacent occupied seats never share the same subject code."
+        description="Generate conflict-free hall seating. Printable hall sheets follow the supplied Modern College R.No./Ben. No and Seat No format."
       />
       <Alert>{error}</Alert>
       <Alert type="success">{msg}</Alert>
@@ -234,7 +234,7 @@ export default function Seating() {
                   window.open(URL.createObjectURL(r.data), "_blank");
                 }}
               >
-                PDF
+                Hall Sheet PDF
               </a>
             </div>
             <div
